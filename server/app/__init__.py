@@ -21,7 +21,7 @@ def create_app():
     CORS(app)
 
     # ------------------- Import models (for Alembic) -------------------
-    from app.models.user import User
+    from app.models.auth import User
     from app.models.history import PaymentHistory
     from app.models.household import Household
     from app.models.service import Service

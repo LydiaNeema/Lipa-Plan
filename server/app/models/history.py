@@ -1,10 +1,9 @@
 from app import db
-from datetime import date
 
 class PaymentHistory(db.Model):
     __tablename__ = 'payment_history'
 
-    id = db.Column(db.Integer, primary_key = True)
+    id = db.Column(db.Integer, primary_key=True)
     service_id = db.Column(db.Integer, db.ForeignKey("services.id"), nullable=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
     household_id = db.Column(db.Integer, db.ForeignKey("households.id"), nullable=True)
