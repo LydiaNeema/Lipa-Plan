@@ -1,0 +1,28 @@
+# === Python cache files ===
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# === Virtual environment ===
+venv/
+.env/
+ENV/
+env/
+server/venv/
+
+# === Logs ===
+*.log
+
+# === OS / Editor files ===
+.DS_Store
+*.swp
+*.swo
+*.idea/
+.vscode/
+
+# === SQLite database ===
+instance/app.db
+server/app.db
+
+# === Flask migrations
