@@ -4,6 +4,7 @@ class UpcomingPaymentSchema(Schema):
     id = fields.Int(dump_only=True)
     service_id = fields.Int(required=True)
     household_id = fields.Int(required=True)
+    user_id = fields.Int(required=True)   # 🔹 added
 
     amount = fields.Float(required=True)
     due_date = fields.Str(required=True)
@@ -16,6 +17,6 @@ class UpcomingPaymentSchema(Schema):
     created_at = fields.DateTime(dump_only=True)
     updated_at = fields.DateTime(dump_only=True)
 
-    # Optional: include related data (uncomment if needed)
+    # Optional nested relations
     # service = fields.Nested("ServiceSchema", only=("id", "name"), dump_only=True)
     # household = fields.Nested("HouseholdSchema", only=("id", "name"), dump_only=True)
