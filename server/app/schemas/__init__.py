@@ -1,8 +1,8 @@
 from .auth import UserSchema
-from .household import HouseholdSchema
-from .history import PaymentHistorySchema
+#from .household import HouseholdSchema
+#from .history import PaymentHistorySchema
 from .service import ServiceSchema
-from .upcoming import UpcomingSchema
+from .upcoming import UpcomingPaymentSchema
 
 __all__ = [
     "UserSchema",

@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from app.models.service import Service
-from app.schemas.service_schema import ServiceSchema
+from app.schemas.service import ServiceSchema
 from datetime import date, timedelta
 
 service_bp = Blueprint("service", __name__, url_prefix="/services")
