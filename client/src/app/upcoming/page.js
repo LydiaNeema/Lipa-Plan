@@ -7,6 +7,7 @@ import PaymentItem from "../../components/PaymentItem";
 import {
   getDashboardData,
   markPaymentAsPaid as apiMarkPaymentAsPaid,
+  getServices, // ADD THIS IMPORT
 } from "../../utils/api";
 import { useAuth } from "../../context/AuthContext";
 
@@ -15,32 +16,39 @@ export default function UpcomingPage() {
 
   const [upcoming, setUpcoming] = useState([]);
   const [overdue, setOverdue] = useState([]);
+  const [services, setServices] = useState([]); // ADD THIS STATE
   const [filter, setFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // ✅ Fetch data from the service page API (context-aware)
+  // UPDATED: Fetch both payments AND services
   const load = useCallback(async () => {
     if (!token) return;
     try {
       setLoading(true);
       setError(null);
-      const data = await getDashboardData(token);
-      setUpcoming(data.upcomingPayments || []);
-      setOverdue(data.overduePayments || []);
+      
+      // Fetch payments and services in parallel
+      const [paymentsData, servicesData] = await Promise.all([
+        getDashboardData(token),
+        getServices(token)
+      ]);
+      
+      setUpcoming(paymentsData.upcomingPayments || []);
+      setOverdue(paymentsData.overduePayments || []);
+      setServices(servicesData || []); // Store services
     } catch (err) {
-      console.error("Error fetching payments:", err);
+      console.error("Error fetching data:", err);
       setError("Failed to load payments. Please try again.");
     } finally {
       setLoading(false);
     }
   }, [token]);
 
-  // ✅ Mark payment as paid and reload
   const handleMarkAsPaid = async (paymentId, amount = null) => {
     try {
       await apiMarkPaymentAsPaid(paymentId, token, amount);
-      await load(); // refresh after marking as paid
+      await load();
     } catch (error) {
       console.error("Error marking payment as paid:", error);
       setError("Error marking payment as paid. Please try again.");
@@ -53,7 +61,6 @@ export default function UpcomingPage() {
     }
   }, [isAuthenticated, load]);
 
-  // ✅ Filtering logic (same as 2nd version)
   const filteredPayments = useMemo(() => {
     const now = new Date();
     const threeDaysFromNow = new Date();
@@ -107,7 +114,6 @@ export default function UpcomingPage() {
     user?.name ||
     (user?.email ? user.email.split("@")[0] : "User");
 
-  // ✅ Loading screen (same as 2nd version)
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#1E3A8A] to-[#0A1A33] text-white">
@@ -121,7 +127,6 @@ export default function UpcomingPage() {
       <Navbar />
 
       <div className="flex-1 ml-64">
-        {/* Header */}
         <div className="flex justify-between items-center px-6 py-4 border-b border-white/10 backdrop-blur-md">
           <h1 className="text-xl font-bold tracking-wide">Upcoming Payments</h1>
           <div className="flex items-center gap-4">
@@ -150,7 +155,6 @@ export default function UpcomingPage() {
           </div>
         </div>
 
-        {/* Error message */}
         {error && (
           <div className="mx-6 mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
             <p className="text-red-400 text-sm">{error}</p>
@@ -163,7 +167,6 @@ export default function UpcomingPage() {
           </div>
         )}
 
-        {/* Filters */}
         <div className="overflow-x-auto px-6 py-4 border-b border-white/10">
           <div className="flex gap-3">
             {filterOptions.map((option) => {
@@ -196,7 +199,6 @@ export default function UpcomingPage() {
           </div>
         </div>
 
-        {/* Payment List */}
         <div className="px-6 pb-10">
           {filteredPayments.length === 0 ? (
             <div className="text-center mt-20 space-y-4">
@@ -228,17 +230,22 @@ export default function UpcomingPage() {
             </div>
           ) : (
             <div className="space-y-4 mt-6">
-              {filteredPayments.map((payment) => (
-                <div
-                  key={payment.id}
-                  className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.4)] p-4 hover:bg-white/10 transition-colors"
-                >
+              {filteredPayments.map((payment) => {
+                // Find the matching service for this payment
+                const service = services.find(s => 
+                  s.id === payment.serviceId || 
+                  s.id === payment.service_id
+                );
+                
+                return (
                   <PaymentItem
+                    key={payment.id}
                     payment={payment}
+                    service={service} // Pass the service data
                     onMarkAsPaid={handleMarkAsPaid}
                   />
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

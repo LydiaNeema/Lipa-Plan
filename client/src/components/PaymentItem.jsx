@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Calendar, Wallet, Clock, AlertCircle, CheckCircle, X, TrendingUp } from "lucide-react";
 
-export default function PaymentItem({ payment, onMarkAsPaid }) {
+export default function PaymentItem({ payment, service, onMarkAsPaid }) {
   const [showPartial, setShowPartial] = useState(false);
   const [partialAmount, setPartialAmount] = useState("");
 
@@ -38,12 +38,12 @@ export default function PaymentItem({ payment, onMarkAsPaid }) {
   };
 
   const isOverdue = () => {
-    const dueDate = new Date(payment.dueDate);
+    const dueDate = new Date(payment.dueDate || payment.due_date);
     return dueDate < new Date();
   };
 
   const isDueSoon = () => {
-    const dueDate = new Date(payment.dueDate);
+    const dueDate = new Date(payment.dueDate || payment.due_date);
     const now = new Date();
     const threeDaysFromNow = new Date();
     threeDaysFromNow.setDate(now.getDate() + 3);
@@ -80,22 +80,29 @@ export default function PaymentItem({ payment, onMarkAsPaid }) {
 
   const status = getStatusConfig();
 
+  // Get service name - handle both service object and payment fields
+  const serviceName = service?.name || payment.serviceName || payment.service_name || "Payment";
+  const serviceCategory = service?.category || payment.category;
+  const serviceDescription = service?.description || payment.description;
+  const serviceColor = service?.color || "#3b82f6";
+
   return (
     <div className="group relative">
-      {/* Card Container with Hover Effect */}
       <div className="relative bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-md rounded-2xl border border-white/10 overflow-hidden transition-all duration-300 hover:border-white/20 hover:shadow-2xl hover:shadow-blue-500/10">
-        {/* Subtle gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         
         <div className="relative p-6">
-          {/* Header: Service Name + Status Badge */}
           <div className="flex items-start justify-between mb-6">
             <div className="flex items-center gap-4">
-              {/* Service Avatar */}
               <div className="relative">
-                <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
+                <div 
+                  className="h-14 w-14 rounded-xl flex items-center justify-center shadow-lg"
+                  style={{
+                    background: `linear-gradient(to bottom right, ${serviceColor}, ${serviceColor}dd)`
+                  }}
+                >
                   <span className="text-white font-bold text-xl">
-                    {payment.serviceName?.charAt(0).toUpperCase() || "P"}
+                    {serviceName.charAt(0).toUpperCase()}
                   </span>
                 </div>
                 <div className="absolute -bottom-1 -right-1 h-5 w-5 bg-green-500 rounded-full border-2 border-slate-800 flex items-center justify-center">
@@ -103,36 +110,31 @@ export default function PaymentItem({ payment, onMarkAsPaid }) {
                 </div>
               </div>
               
-              {/* Service Info */}
               <div>
                 <h3 className="text-xl font-bold text-white mb-1">
-                  {payment.serviceName || "Payment"}
+                  {serviceName}
                 </h3>
-                {payment.category && (
+                {serviceCategory && (
                   <p className="text-sm text-slate-400 uppercase tracking-wider font-medium">
-                    {payment.category}
+                    {serviceCategory}
                   </p>
                 )}
               </div>
             </div>
 
-            {/* Status Badge */}
             <div className={`${status.bgColor} ${status.textColor} ${status.borderColor} px-4 py-2 rounded-full border backdrop-blur-sm flex items-center gap-2 shadow-lg ${status.glowColor}`}>
               <AlertCircle size={16} />
               <span className="text-sm font-semibold">{status.text}</span>
             </div>
           </div>
 
-          {/* Description */}
-          {payment.description && (
+          {serviceDescription && (
             <p className="text-slate-300 text-sm mb-6 leading-relaxed">
-              {payment.description}
+              {serviceDescription}
             </p>
           )}
 
-          {/* Payment Details - Side by Side */}
           <div className="flex gap-4 mb-6">
-            {/* Amount Box */}
             <div className="flex-1 bg-gradient-to-br from-slate-700/30 to-slate-800/30 rounded-xl p-4 border border-white/5">
               <div className="flex items-center gap-2 mb-2">
                 <div className="p-1.5 bg-green-500/20 rounded-lg">
@@ -145,7 +147,6 @@ export default function PaymentItem({ payment, onMarkAsPaid }) {
               </p>
             </div>
 
-            {/* Due Date Box */}
             <div className="flex-1 bg-gradient-to-br from-slate-700/30 to-slate-800/30 rounded-xl p-4 border border-white/5">
               <div className="flex items-center gap-2 mb-2">
                 <div className="p-1.5 bg-blue-500/20 rounded-lg">
@@ -154,22 +155,21 @@ export default function PaymentItem({ payment, onMarkAsPaid }) {
                 <span className="text-xs text-slate-400 font-medium uppercase tracking-wider">Due Date</span>
               </div>
               <p className={`text-2xl font-bold ${status.textColor}`}>
-                {formatDate(payment.dueDate)}
+                {formatDate(payment.dueDate || payment.due_date)}
               </p>
             </div>
           </div>
 
-          {/* Frequency Badge */}
-          {payment.frequency && (
+          {(payment.frequency || service?.frequency) && (
             <div className="inline-flex items-center gap-2 bg-slate-700/30 px-3 py-1.5 rounded-lg mb-6 border border-white/5">
               <Clock size={14} className="text-slate-400" />
               <span className="text-xs text-slate-300 font-medium">
-                {payment.frequency.charAt(0).toUpperCase() + payment.frequency.slice(1)} Payment
+                {((payment.frequency || service?.frequency) + '').charAt(0).toUpperCase() + 
+                 ((payment.frequency || service?.frequency) + '').slice(1)} Payment
               </span>
             </div>
           )}
 
-          {/* Action Buttons or Partial Payment Form */}
           {!showPartial ? (
             <div className="flex gap-3">
               <button
@@ -185,7 +185,9 @@ export default function PaymentItem({ payment, onMarkAsPaid }) {
               
               <button
                 onClick={() => setShowPartial(true)}
-                className="flex-1 group/btn relative overflow-hidden bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-semibold py-3.5 px-6 rounded-xl transition-all duration-300 shadow-lg shadow-orange-500/25 hover:shadow-xl hover:shadow-orange-500/40 hover:scale-[1.02]"
+                className="flex-1 group/btn relative overflow-hidden bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-semibold py-3.5 px-6 rounded-xl transition-all duration-300 shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/40 hover:scale-[1.02]"
+
+
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-700" />
                 <span className="relative flex items-center justify-center gap-2">
@@ -195,11 +197,10 @@ export default function PaymentItem({ payment, onMarkAsPaid }) {
               </button>
             </div>
           ) : (
-            /* Partial Payment Form */
             <div className="bg-gradient-to-br from-slate-700/40 to-slate-800/40 backdrop-blur-sm rounded-xl p-5 border border-white/10">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="text-white font-bold text-base flex items-center gap-2">
-                  <Wallet size={18} className="text-orange-400" />
+                  <Wallet size={18} className="text-green-400" />
                   Enter Partial Amount
                 </h4>
                 <button

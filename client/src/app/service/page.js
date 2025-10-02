@@ -10,6 +10,7 @@ import {
   createService,
   updateService,
   deleteService,
+  deletePaymentsByService, // ADD THIS IMPORT
 } from "../../utils/api";
 import { useAuth } from "../../context/AuthContext";
 
@@ -35,7 +36,6 @@ export default function ServicePage() {
   const [error, setError] = useState(null);
   const [initialLoading, setInitialLoading] = useState(true);
 
-  // track expanded categories
   const [expandedCategories, setExpandedCategories] = useState({});
 
   const displayName = useMemo(() => {
@@ -111,6 +111,7 @@ export default function ServicePage() {
     setError(null);
   }, []);
 
+  // UPDATED handleDelete function
   const handleDelete = useCallback(
     async (serviceId) => {
       if (!token) {
@@ -118,9 +119,12 @@ export default function ServicePage() {
         return;
       }
 
+      const service = services.find(s => s.id === serviceId);
+      const serviceName = service?.name || "this service";
+
       if (
         !confirm(
-          "Are you sure you want to delete this service? This action cannot be undone."
+          `Are you sure you want to delete ${serviceName}?\n\nThis will also delete all associated upcoming payments.\n\nThis action cannot be undone.`
         )
       ) {
         return;
@@ -128,11 +132,25 @@ export default function ServicePage() {
 
       try {
         setError(null);
+        setLoading(true);
+        
+        // Delete all payments associated with this service first
+        try {
+          await deletePaymentsByService(serviceId, token);
+        } catch (err) {
+          console.warn("No payments to delete:", err);
+          // Continue with service deletion even if no payments exist
+        }
+        
+        // Then delete the service
         await deleteService(serviceId, token);
         setServices(services.filter((s) => s.id !== serviceId));
+        
       } catch (err) {
         console.error("Delete service error:", err);
         setError(err.message || "Failed to delete service. Please try again.");
+      } finally {
+        setLoading(false);
       }
     },
     [token, services]
@@ -164,7 +182,6 @@ export default function ServicePage() {
     );
   }
 
-  // Group services by category
   const groupedServices = categoriesOrder
     .map((cat) => ({
       category: cat,
@@ -177,7 +194,6 @@ export default function ServicePage() {
       <Navbar />
 
       <div className="flex-1 ml-64">
-        {/* Header */}
         <div className="flex justify-between items-center px-6 py-4 border-b border-white/10 backdrop-blur-md">
           <h1 className="text-xl font-bold tracking-wide">Service</h1>
           <div className="flex items-center gap-4">
@@ -188,7 +204,6 @@ export default function ServicePage() {
           </div>
         </div>
 
-        {/* Add Service Button */}
         <div className="px-6 py-4 border-b border-white/5">
           <button
             onClick={handleToggleForm}
@@ -214,7 +229,6 @@ export default function ServicePage() {
           </div>
         )}
 
-        {/* Form Modal */}
         {formVisible && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
             <div className="bg-[#1E3A8A] w-full max-w-2xl rounded-xl p-6 relative">
@@ -252,7 +266,6 @@ export default function ServicePage() {
           </div>
         )}
 
-        {/* Services List Grouped by Category */}
         <div className="px-6 py-6 space-y-8">
           {groupedServices.length === 0 ? (
             <div className="text-center py-10 text-gray-400">

@@ -84,6 +84,14 @@ export function markPaymentAsPaid(paymentId, token, amount = null) {
   });
 }
 
+// NEW: Delete all payments associated with a service
+export function deletePaymentsByService(serviceId, token) {
+  return request(`/payments/service/${serviceId}`, { 
+    method: "DELETE", 
+    token 
+  });
+}
+
 // -------------------- History --------------------
 export function getPaidPayments(token) {
   return request("/history", { method: "GET", token });
